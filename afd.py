@@ -1,19 +1,4 @@
-"""Gerador de Autômato Finito Determinístico (AFD) mínimo.
-
-Trabalho de Linguagens Formais e Autômatos — Ciência da Computação, UFFS/Chapecó.
-
-A partir de um arquivo com tokens e/ou Gramáticas Regulares, a aplicação gera um
-AFD mínimo (livre de estados inalcançáveis e mortos), com estado de erro. Tudo em
-um único arquivo, organizado nas seções:
-
-    1. Estrutura de dados (classe Automato)
-    2. Carga            -> arquivo -> AFND
-    3. Determinização   -> AFND -> AFD (construção de subconjuntos)
-    4. Minimização      -> remove estados inalcançáveis e mortos (sem classes de equivalência)
-    5. Estado de erro   -> completa a função de transição
-    6. Tabelas          -> formatação da saída
-    7. CLI              -> interface de linha de comando
-
+"""
 Uso:
     python afd.py <arquivo_entrada> [-o saida.txt] [-t palavra1 palavra2 ...]
 """
@@ -25,15 +10,10 @@ import re
 import string
 import sys
 
-# Símbolo de transição vazia (epsilon). Nas gramáticas regulares deste trabalho o
-# epsilon só marca um não-terminal como final, então normalmente NÃO há transições
-# em epsilon; ainda assim o suporte fica pronto (determinização com ε-fecho).
 EPSILON = "ε"
 
 
-# ====================================================================== #
 # 1. Estrutura de dados
-# ====================================================================== #
 class Automato:
     """Representa tanto o AFND quanto o AFD em todas as etapas.
 
@@ -109,28 +89,9 @@ class Automato:
         return novo
 
 
-# ====================================================================== #
+
 # 2. Carga: arquivo -> AFND
-# ====================================================================== #
-# Regras (conforme o enunciado):
-#   * um único estado inicial (S), compartilhado por todos os tokens/gramáticas;
-#   * para um token, cada símbolo cria um NOVO estado destino (sem reuso); o último
-#     estado é final e reconhece aquele token;
-#   * em uma gramática, cada não-terminal vira um estado próprio da gramática;
-#     a produção `ε` marca o não-terminal como final; `<X> ::= a<Y>` cria X --a--> Y;
-#   * o rótulo (token reconhecido) de uma gramática é o nome do seu símbolo inicial.
 
-NOME_INICIAL = "S"
-
-# Letras para os demais estados do AFND, na ordem de criação (A, B, C, ...).
-# A letra 'S' fica reservada ao estado inicial, por isso é omitida.
-_LETRAS = "".join(c for c in string.ascii_uppercase if c != "S")
-
-# Representações aceitas para epsilon dentro de uma produção.
-_EPSILONS = {"ε", "&", "eps", "epsilon", "lambda", "λ", ""}
-
-# Captura uma sequência de terminais seguida (opcionalmente) de um não-terminal ao
-# final, ex.: 'a<A>' -> ('a', '<A>'); 'abc' -> ('abc', None).
 _RE_ALTERNATIVA = re.compile(r"^([^<>]*)(<[^<>]+>)?$")
 
 # Linha de gramática: começa com um não-terminal seguido de '::=', ex.: '<S> ::= ...'.
@@ -266,9 +227,7 @@ def _processar_alternativa(afnd, origem, alt, estado_de, contador, rotulo) -> No
         afnd.marcar_final(atual, rotulo)
 
 
-# ====================================================================== #
 # 3. Determinização: AFND -> AFD (construção de subconjuntos)
-# ====================================================================== #
 def epsilon_fecho(afnd: Automato, conjunto: set[str]) -> set[str]:
     pilha = list(conjunto)
     fecho = set(conjunto)
@@ -334,13 +293,8 @@ def determinizar(afnd: Automato) -> Automato:
     return afd
 
 
-# ====================================================================== #
 # 4. Minimização: remove estados inalcançáveis e mortos
-# ====================================================================== #
-# Conforme o enunciado, a minimização restringe-se a deixar o AFD "livre de
-# estados inalcançáveis e mortos", SEM aplicar classes de equivalência.
-#   * inalcançável: não é atingido a partir do estado inicial;
-#   * morto: não é final e não alcança nenhum estado final.
+
 
 def estados_alcancaveis(afd: Automato) -> set[str]:
     alcancaveis = {afd.inicial}
@@ -399,11 +353,7 @@ def minimizar(afd: Automato) -> Automato:
     return remover_mortos(remover_inalcancaveis(afd))
 
 
-# ====================================================================== #
 # 5. Estado de erro: completa a função de transição
-# ====================================================================== #
-# Toda célula não mapeada passa a apontar para o estado de erro, que é um estado
-# armadilha (não final): todas as suas transições permanecem nele próprio.
 
 NOME_ERRO = "qErro"
 
@@ -418,11 +368,7 @@ def adicionar_estado_erro(afd: Automato, nome: str = NOME_ERRO) -> Automato:
     return completo
 
 
-# ====================================================================== #
 # 6. Tabelas de transição (saída em texto)
-# ====================================================================== #
-# Convenções: -> inicial; * final; - célula sem transição. A última coluna mostra
-# o(s) token(s) reconhecido(s).
 
 def _ordenar_estados(afd: Automato) -> list[str]:
     """Inicial primeiro, demais em ordem, e o estado de erro por último."""
