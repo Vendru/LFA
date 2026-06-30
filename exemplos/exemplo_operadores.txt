@@ -1,0 +1,8 @@
+# Tokens que compartilham prefixo geram nao-determinismo no AFND.
+if
+int
+inteiro
+# Numero inteiro (um ou mais digitos) via gramatica regular.
+# O simbolo inicial <num> sera o rotulo do token reconhecido.
+<num> ::= 0<N> | 1<N> | 2<N> | 3<N> | 4<N> | 5<N> | 6<N> | 7<N> | 8<N> | 9<N>
+<N> ::= 0<N> | 1<N> | 2<N> | 3<N> | 4<N> | 5<N> | 6<N> | 7<N> | 8<N> | 9<N> | ε
